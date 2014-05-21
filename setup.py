@@ -32,10 +32,10 @@ setup(
     'aggcat'
   ],
   install_requires = [
-    'lxml==3.2.1',
-    'M2Crypto==0.21.1',
-    'requests==1.2.0',
-    'requests-oauthlib==0.3.3'
+    'lxml',
+    'M2Crypto',
+    'requests',
+    'requests-oauthlib'
   ],
   classifiers = [
     'Development Status :: 4 - Beta',
