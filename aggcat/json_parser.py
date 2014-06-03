@@ -147,4 +147,15 @@ class JsonObjectify(ObjectifyBase):
     
     def get_object(self):
         return self.obj
+    
+    @classmethod
+    def get_credential_fields(cls, institution_details_response):
+        fields = []
+        
+        obj = cls(institution_details_response.content)
+        
+        for key in obj.keys:
+            fields_data = {}
+        
+        raise NotImplementedError()
         

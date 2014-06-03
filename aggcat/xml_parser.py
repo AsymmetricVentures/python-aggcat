@@ -44,7 +44,7 @@ class XmlObjectify(ObjectifyBase):
         self.xml = xml
 
         # parse the tree with lxml
-        self.tree = etree.fromstring(remove_namespaces(etree.XML(xml)))
+        self.tree = etree.fromstring(self._remove_namespaces(etree.XML(xml)))
 
         self.root_tag = self.tree.tag
 
@@ -57,7 +57,12 @@ class XmlObjectify(ObjectifyBase):
             self.obj = self._create_object(self.tree.tag)
         else:
             self._walk_and_objectify(self.tree, self.obj)
-
+    
+    @classmethod
+    def _remove_namespaces(cls, tree):
+        """Remove the namspaces from the Intuit XML for easier parsing"""
+        return remove_namespaces(tree)
+    
     def _create_object(self, name, attributes = None):
         """Dynamically create an object"""
         if attributes is None:
@@ -130,3 +135,27 @@ class XmlObjectify(ObjectifyBase):
         root_obj.to_xml = lambda: self.xml
 
         return root_obj
+    
+    @classmethod
+    def get_credential_fields(cls, institution_details_response):
+        fields = []
+
+        t = etree.fromstring(institution_details_response.content.to_xml())
+
+        # remove all the namespaces for easier parsing and get all the keys
+        t = etree.fromstring(cls._remove_namespaces(t))
+        keys = t.xpath('./keys/key')
+
+        # extract the field name and value
+        for key in keys:
+            fields_data = {}
+            for part in key.xpath('./*'):
+                fields_data[part.tag] = part.text
+            # only provide fields that should be displayed to the user
+            if fields_data['displayFlag'] == 'true':
+                fields.append(fields_data)
+
+        # order by displayOrder
+        fields = sorted(fields, key = lambda x: x['displayOrder'])
+
+        return fields

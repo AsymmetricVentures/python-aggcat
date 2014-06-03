@@ -184,11 +184,6 @@ class AggcatClient(object):
             response.content
         )
 
-
-    def _remove_namespaces(self, tree):
-        """Remove the namspaces from the Intuit XML for easier parsing"""
-        return remove_namespaces(tree)
-
     def _generate_login_xml(self, **credentials):
         """Generate the xml needed to login"""
         xml_credentials = []
@@ -275,29 +270,12 @@ class AggcatClient(object):
                 <input type="submit" value="Login to your bank" />
             </form>
         """
-        fields = []
-
         response = self.get_institution_details(institution_id)
-        t = etree.fromstring(response.content.to_xml())
-
-        # remove all the namespaces for easier parsing and get all the keys
-        t = etree.fromstring(self._remove_namespaces(t))
-        keys = t.xpath('./keys/key')
-
-        # extract the field name and value
-        for key in keys:
-            fields_data = {}
-            for part in key.xpath('./*'):
-                fields_data[part.tag] = part.text
-            # only provide fields that should be displayed to the user
-            if fields_data['displayFlag'] == 'true':
-                fields.append(fields_data)
-
-        # order by displayOrder
-        fields = sorted(fields, key=lambda x: x['displayOrder'])
-
-        return fields
-
+        
+        objectify = XmlObjectify if not self.objectify else self.objectify
+        
+        return objectify.get_credential_fields(response)
+        
     def get_institutions(self):
         """Get a list of financial instituions
 

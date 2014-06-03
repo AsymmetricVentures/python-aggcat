@@ -16,3 +16,9 @@ class ObjectifyBase(object):
         """Convert the CamelCase format of tag name to
         a camel_case format"""
         return re.sub(tag_pattern, r'_\1', tag_name).lower()
+    
+    @classmethod
+    def get_credential_fields(cls, institution_details_response):
+        raise NotImplementedError()
+    
+    
