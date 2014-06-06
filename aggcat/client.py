@@ -4,11 +4,9 @@ import urlparse
 
 import requests
 from requests_oauthlib import OAuth1Session
-from lxml import etree
 
 from .saml import SAML
 from .exceptions import HTTPError
-from .utils import remove_namespaces
 from .xml_parser import XmlObjectify
 from .helpers import AccountType
 from .parser import ObjectifyBase
@@ -17,10 +15,11 @@ from .parser import ObjectifyBase
 class AggCatResponse(object):
     """General response object that contains the HTTP status code
     and response text"""
-    def __init__(self, status_code, headers, content):
+    def __init__(self, status_code, headers, content, response = None):
         self.status_code = status_code
         self.headers = headers
         self.content = content
+        self.response = response
 
     def __repr__(self):
         return u'<AggCatResponse %s>' % self.status_code
@@ -110,12 +109,12 @@ class AggcatClient(object):
         payload = {'saml_assertion': self.saml.assertion()}
         headers = {'Authorization': 'OAuth oauth_consumer_key="%s"' % self.consumer_key}
 
-        r = requests.post(self.saml_url, data=payload, headers=headers)
+        r = requests.post(self.saml_url, data = payload, headers = headers)
 
         if r.status_code == 200:
             return urlparse.parse_qs(r.text)
         else:
-            raise HTTPError('A %s error occured retrieving token. Please check your settings.' % r.status_code, response=r)
+            raise HTTPError('A %s error occured retrieving token. Please check your settings.' % r.status_code, response = r)
 
     def _refresh_client(self):
         """If a token expires, refresh the client"""
@@ -132,7 +131,7 @@ class AggcatClient(object):
         """Build a url from a string path"""
         return '%s/%s' % (self.base_url, path)
 
-    def _make_request(self, path, method='GET', body=None, query={}, headers={}):
+    def _make_request(self, path, method = 'GET', body = None, query = {}, headers = {}):
         """Make the signed request to the API"""
         # build the query url
         url = self._build_url(path)
@@ -170,7 +169,8 @@ class AggcatClient(object):
                 return AggCatResponse(
                     response.status_code,
                     response.headers,
-                    return_obj(response.content).get_object()
+                    return_obj(response.content).get_object(),
+                    response = response
                 )
             except return_obj.error_type:
                 # this errors happens when the response is blank
@@ -181,7 +181,8 @@ class AggcatClient(object):
         return AggCatResponse(
             response.status_code,
             response.headers,
-            response.content
+            response.content,
+            response = response
         )
 
     def _generate_login_xml(self, **credentials):
@@ -242,23 +243,23 @@ class AggcatClient(object):
 
             >>> client.get_credential_fields(100000)
             >>> [{'description': 'Banking Userid',
-                  'displayFlag': 'true',
-                  'displayOrder': '1',
-                  'instructions': 'Enter banking userid (demo)',
-                  'mask': 'false',
-                  'name': 'Banking Userid',
-                  'status': 'Active',
-                  'valueLengthMax': '20',
-                  'valueLengthMin': '1'},
-                 {'description': 'Banking Password',
-                  'displayFlag': 'true',
-                  'displayOrder': '2',
-                  'instructions': 'Enter banking password (go)',
-                  'mask': 'true',
-                  'name': 'Banking Password',
-                  'status': 'Active',
-                  'valueLengthMax': '20',
-                  'valueLengthMin': '1'}]
+                'displayFlag': 'true',
+                'displayOrder': '1',
+                'instructions': 'Enter banking userid (demo)',
+                'mask': 'false',
+                'name': 'Banking Userid',
+                'status': 'Active',
+                'valueLengthMax': '20',
+                'valueLengthMin': '1'},
+                {'description': 'Banking Password',
+                'displayFlag': 'true',
+                'displayOrder': '2',
+                'instructions': 'Enter banking password (go)',
+                'mask': 'true',
+                'name': 'Banking Password',
+                'status': 'Active',
+                'valueLengthMax': '20',
+                'valueLengthMin': '1'}]
 
         The fields that are returned are already ordered by the `displayOrder` field. The `name` field
         goes into the html input tags name attribute. The `mask` field will let you know if it's a
@@ -328,27 +329,27 @@ class AggcatClient(object):
 
             >>> client.get_credential_fields(100000)
             >>> [{'description': 'Banking Userid',
-                  'displayFlag': 'true',
-                  'displayOrder': '1',
-                  'instructions': 'Enter banking userid (demo)',
-                  'mask': 'false',
-                  'name': 'Banking Userid',
-                  'status': 'Active',
-                  'valueLengthMax': '20',
-                  'valueLengthMin': '1'},
-                 {'description': 'Banking Password',
-                  'displayFlag': 'true',
-                  'displayOrder': '2',
-                  'instructions': 'Enter banking password (go)',
-                  'mask': 'true',
-                  'name': 'Banking Password',
-                  'status': 'Active',
-                  'valueLengthMax': '20',
-                  'valueLengthMin': '1'}]
+                'displayFlag': 'true',
+                'displayOrder': '1',
+                'instructions': 'Enter banking userid (demo)',
+                'mask': 'false',
+                'name': 'Banking Userid',
+                'status': 'Active',
+                'valueLengthMax': '20',
+                'valueLengthMin': '1'},
+                {'description': 'Banking Password',
+                'displayFlag': 'true',
+                'displayOrder': '2',
+                'instructions': 'Enter banking password (go)',
+                'mask': 'true',
+                'name': 'Banking Password',
+                'status': 'Active',
+                'valueLengthMax': '20',
+                'valueLengthMin': '1'}]
             >>> r = client.discover_and_add_accounts(100000, **{
                 'Banking Userid': 'direct',
                 'Banking Password': 'anyvalue',
-               })
+            })
             >>> r
             <AggCatResponse 201>
             >>> r.content
@@ -359,7 +360,7 @@ class AggcatClient(object):
             >>> r = client.discover_and_add_accounts(100000, **{
                 'Banking Userid': 'direct',
                 'Banking Password': 'anyvalue',
-               })
+            })
             >>> r
             <AggCatResponse 401>
             >>> r.content
@@ -409,22 +410,22 @@ class AggcatClient(object):
             >>> r = client.discover_and_add_accounts(100000, **{
                 'Banking Userid': 'direct',
                 'Banking Password': 'anyvalue',
-               })
+            })
             >>> r
             <AggCatResponse 401>
             >>> r.content
             <Challenges object [<Challenge object @ 0x10d12d5d0>,<Challenge object @ 0x10d12d110> ...] @ 0x10d0ffc50>
             >>> r.headers
             {'challengenodeid': '10.136.17.82',
-             'challengesessionid': 'c31c8a55-754e-4252-8212-b8143270f84f',
-             'connection': 'close',
-             'content-length': '275',
-             'content-type': 'application/xml',
-             'date': 'Mon, 12 Aug 2013 03:15:42 GMT',
-             'intuit_tid': 'e41418d4-7b77-401e-a158-12514b0d84e3',
-             'server': 'Apache/2.2.22 (Unix)',
-             'status': '401',
-             'via': '1.1 ipp-gateway-ap02'}
+            'challengesessionid': 'c31c8a55-754e-4252-8212-b8143270f84f',
+            'connection': 'close',
+            'content-length': '275',
+            'content-type': 'application/xml',
+            'date': 'Mon, 12 Aug 2013 03:15:42 GMT',
+            'intuit_tid': 'e41418d4-7b77-401e-a158-12514b0d84e3',
+            'server': 'Apache/2.2.22 (Unix)',
+            'status': '401',
+            'via': '1.1 ipp-gateway-ap02'}
 
         * The ``challenge_session_id`` parameter comes from ``r.headers['challengesessionid']``
         * The ``challenge_node_id`` parameter comes from ``r.headers['challengenodeid']``
@@ -456,7 +457,7 @@ class AggcatClient(object):
             'institutions/%s/logins' % institution_id,
             'POST',
             xml,
-            headers=headers
+            headers = headers
         )
 
     def get_customer_accounts(self):
@@ -500,14 +501,14 @@ class AggcatClient(object):
         You may have multiple logins. For example, a Fidelity Account and a Bank of America. This
         will allow you to get onlt the accounts for a specified login::
 
-             >>> client.get_login_accounts(83850162)
-             <AggCatResponse 200>
-             >>> r.content
-             <Accountlist object [<Investmentaccount object @ 0x1090c9bd0>,<Loanaccount object @ 0x1090c9890> ...] @ 0x1090c9b10>
-             >>> len(r.content)
-             10
-             >>> r.content[0]
-             <Investmentaccount object @ 0x1090c9bd0>
+            >>> client.get_login_accounts(83850162)
+            <AggCatResponse 200>
+            >>> r.content
+            <Accountlist object [<Investmentaccount object @ 0x1090c9bd0>,<Loanaccount object @ 0x1090c9890> ...] @ 0x1090c9b10>
+            >>> len(r.content)
+            10
+            >>> r.content[0]
+            <Investmentaccount object @ 0x1090c9bd0>
 
         .. note::
 
@@ -527,12 +528,12 @@ class AggcatClient(object):
 
         ::
 
-             >>> r = client.get_account(400004540560)
-             <AggCatResponse 200>
-             >>> r.content
-             <Investmentaccount object @ 0x1091cfc10>
-             >>> r.content.account_id
-             '400004540560'
+            >>> r = client.get_account(400004540560)
+            <AggCatResponse 200>
+            >>> r.content
+            <Investmentaccount object @ 0x1091cfc10>
+            >>> r.content.account_id
+            '400004540560'
 
         .. note::
             Attributes on accounts very depending on type. See `account reference
@@ -542,7 +543,7 @@ class AggcatClient(object):
         """
         return self._make_request('accounts/%s' % account_id)
 
-    def get_account_transactions(self, account_id, start_date, end_date=None):
+    def get_account_transactions(self, account_id, start_date, end_date = None):
         """Get specific account transactions from a date range
 
         :param integer account_id: the id of an account retrieved from :meth:`get_login_accounts`
@@ -587,7 +588,7 @@ class AggcatClient(object):
 
         return self._make_request(
             'accounts/%s/transactions' % account_id,
-            query=query
+            query = query
         )
 
     def get_investment_positions(self, account_id):
@@ -599,10 +600,10 @@ class AggcatClient(object):
 
         ::
 
-             >>> r = client.get_investment_positions(400004540560)
-             <AggCatResponse 200>
-             >>> r.content
-             <Investmentpositions object @ 0x10a25ebd0>
+            >>> r = client.get_investment_positions(400004540560)
+            <AggCatResponse 200>
+            >>> r.content
+            <Investmentpositions object @ 0x10a25ebd0>
 
         .. note::
 
@@ -622,7 +623,7 @@ class AggcatClient(object):
 
         ::
 
-             >>> client.update_account_type(400004540560, 'investment', '403b')
+            >>> client.update_account_type(400004540560, 'investment', '403b')
 
         **Possible values for account names and types**
 
@@ -647,7 +648,7 @@ class AggcatClient(object):
             body
         )
 
-    def update_institution_login(self, institution_id, login_id, refresh=True, **credentials):
+    def update_institution_login(self, institution_id, login_id, refresh = True, **credentials):
         """Update an instiutions login information
 
         :param integer institution_id: The institution's id. See :ref:`search_for_institution`.
@@ -710,10 +711,10 @@ class AggcatClient(object):
             'logins/%s' % login_id,
             'PUT',
             login_xml,
-            query=query,
+            query = query,
         )
 
-    def update_challenge(self, login_id, challenge_session_id, challenge_node_id, responses, refresh=True):
+    def update_challenge(self, login_id, challenge_session_id, challenge_node_id, responses, refresh = True):
         """Update an instiutions challenge information
 
         :param string login_id: Login id of the instiution. This can be retrieved from an account.
@@ -730,22 +731,22 @@ class AggcatClient(object):
             >>> r = client.update_institution_login(100000, 83850162, **{
                 'Banking Userid': 'tfa_choice',
                 'Banking Password': 'anyvalue',
-               })
+            })
             >>> r
             <AggCatResponse 401>
             >>> r.content
             <Challenges object [<Challenge object @ 0x10d12d5d0>,<Challenge object @ 0x10d12d110> ...] @ 0x10d0ffc50>
             >>> r.headers
             {'challengenodeid': '10.136.17.82',
-             'challengesessionid': 'c31c8a55-754e-4252-8212-b8143270f84f',
-             'connection': 'close',
-             'content-length': '275',
-             'content-type': 'application/xml',
-             'date': 'Mon, 12 Aug 2013 03:15:42 GMT',
-             'intuit_tid': 'e41418d4-7b77-401e-a158-12514b0d84e3',
-             'server': 'Apache/2.2.22 (Unix)',
-             'status': '401',
-             'via': '1.1 ipp-gateway-ap02'}
+            'challengesessionid': 'c31c8a55-754e-4252-8212-b8143270f84f',
+            'connection': 'close',
+            'content-length': '275',
+            'content-type': 'application/xml',
+            'date': 'Mon, 12 Aug 2013 03:15:42 GMT',
+            'intuit_tid': 'e41418d4-7b77-401e-a158-12514b0d84e3',
+            'server': 'Apache/2.2.22 (Unix)',
+            'status': '401',
+            'via': '1.1 ipp-gateway-ap02'}
 
         * The ``challenge_session_id`` parameter comes from ``r.headers['challengesessionid']``
         * The ``challenge_node_id`` parameter comes from ``r.headers['challengenodeid']``
@@ -778,8 +779,8 @@ class AggcatClient(object):
             'logins/%s' % login_id,
             'PUT',
             xml,
-            query=query,
-            headers=headers
+            query = query,
+            headers = headers
         )
 
     def delete_account(self, account_id):
@@ -791,7 +792,7 @@ class AggcatClient(object):
 
         ::
 
-             >>> r = client.delete_account(400004540560)
+            >>> r = client.delete_account(400004540560)
 
         """
         return self._make_request(
@@ -827,7 +828,7 @@ class AggcatClient(object):
         your bulk customer information"""
         raise NotImplementedError('Due to not having a production account available. That costs money.')
 
-    def get_file_data(self, file_name, range=None):
+    def get_file_data(self, file_name, range = None):
         """The file data of `file_name` and `range` of bytes"""
         raise NotImplementedError('Due to not having a production account available. That costs money.')
 
