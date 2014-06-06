@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 import json
 
+import six
+
 from .parser import ObjectifyBase
 
 __all__ = ['JsonObjectify']
@@ -16,7 +18,19 @@ class ObjectifyItemBase(object):
             return '<{} object @ {}>'.format(self._name, hex(id(self)))
     
     __len__ = lambda self: len(self._list)
-    __iter__ = lambda self: iter(self._list)
+    
+    def __iter__(self):
+        self._idx = -1
+        return self
+    
+    def __next__(self):
+        try:
+            self._idx += 1
+            return self[self._idx]
+        except IndexError:
+            raise StopIteration()
+    
+    next = __next__
     
     def __getattr__(self, name):
         
@@ -32,7 +46,6 @@ class ObjectifyItemBase(object):
             
             if isinstance(tree, (list, tuple, dict)):
                 obj = self.__parent__._create_from_tree(tree, name = name)
-                name = obj._name
             else:
                 obj = tree
             
@@ -100,9 +113,14 @@ class JsonObjectify(ObjectifyBase):
                 
                 root_tag, tree = tree.popitem()
                 if isinstance(tree, (list, tuple)):
-                    return self.clean_tag_name(root_tag, tree)
+                    return self._create_list_object(root_tag, tree)
+                elif isinstance(tree, dict):
+                    return self._create_object(root_tag, tree)
+                elif isinstance(tree, six.string_types):
+                    return self._create_object(None, {root_tag:tree})
                 else:
-                    pass
+                    raise TypeError("Cannot objectify {{{!r} : {!r}}}".format(root_tag, tree))
+                    
             else:
                 return self._create_object(name, tree)
         elif isinstance(tree, (tuple, list)):
@@ -152,10 +170,14 @@ class JsonObjectify(ObjectifyBase):
     def get_credential_fields(cls, institution_details_response):
         fields = []
         
-        obj = cls(institution_details_response.content)
+        obj = institution_details_response.content
+        
+        return list(key._tree for key in obj.keys)
         
         for key in obj.keys:
-            fields_data = {}
+            fields_data = key._tree
+            
+            fields.append(fields_data)
         
-        raise NotImplementedError()
+        return fields
         
