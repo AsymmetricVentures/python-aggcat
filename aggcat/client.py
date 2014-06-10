@@ -62,7 +62,7 @@ class AggcatClient(object):
         ``objectify``  This is a BETA functionality. It will objectify the response returned from
         intuit into standard python objects so you don't have to mess with XML. Default: ``True``
     """
-    def __init__(self, consumer_key, consumer_secret, saml_identity_provider_id, customer_id, private_key, objectify = XmlObjectify, verify_ssl = True):
+    def __init__(self, consumer_key, consumer_secret, saml_identity_provider_id, customer_id, private_key, objectify = XmlObjectify, verify_ssl = True, credential_validation = True):
         # base API url
         self.base_url = 'https://financialdatafeed.platform.intuit.com/rest-war/v1'
 
@@ -92,6 +92,9 @@ class AggcatClient(object):
 
         # assign the client
         self.client = self._client()
+
+        # whether or not to validation credentials in update_institution_login and discover_and_add_accounts
+        self.credential_validation = credential_validation
 
     def _client(self):
         """Build an oAuth client from consumer tokens, and oauth tokens"""
@@ -225,6 +228,10 @@ class AggcatClient(object):
     def _validate_credentials(self, institution_id, **credentials):
         """Get required fields and match the `name` key with the keys in the credentials passed
         to ensure that all required fields exist"""
+
+        if not self.credential_validation:
+            return
+
         required_fields = self.get_credential_fields(institution_id)
 
         for field in required_fields:
