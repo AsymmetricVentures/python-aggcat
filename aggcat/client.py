@@ -703,8 +703,13 @@ class AggcatClient(object):
         if refresh:
             query = {'refresh': refresh}
 
-        # validate the credentials passed
-        self._validate_credentials(institution_id, **credentials)
+        # see "Error 185" in
+        # https://developer.intuit.com/docs/0020_customeraccountdata/customer_account_data_api/user_actionable_error_handling
+        # UpdateInstitutionLogin can be called with no credentials in order to retrieve MFA questions that must be
+        # answered by the user before Intuit can proceed. Bypass validation in this case.
+        if credentials:
+            # validate the credentials passed
+            self._validate_credentials(institution_id, **credentials)
 
         login_xml = self._generate_login_xml(**credentials)
         return self._make_request(
