@@ -5,8 +5,6 @@ from datetime import timedelta
 from uuid import uuid4
 from hashlib import sha1
 
-import M2Crypto
-
 # replace newlines before encrypting
 pattern = re.compile(r'>[\n\s]+<', re.I | re.M)
 
@@ -70,7 +68,7 @@ class SAML(object):
     """Create authentication assertions using SAML format"""
     def __init__(self, private_key, saml_identity_provider_id, customer_id):
         # RSA key file to use for signing
-        self.rsa = M2Crypto.RSA.load_key(private_key)
+        self.rsa = load_signer(private_key)
         self.now = datetime.utcnow()
         self.iso_now = '%sZ' % self.now.isoformat()
         self.assertion_id = uuid4().hex
@@ -102,7 +100,7 @@ class SAML(object):
             'assertion_id': self.assertion_id,
             'signed_digest_value': signed_digest_value,
         }
-        return base64.b64encode(self.rsa.sign(sha1(signed_info).digest(), 'sha1'))
+        return base64.b64encode(sign(self.rsa, signed_info))
 
     def refresh(self):
         """Refresh the values to generate another assertion"""
@@ -134,3 +132,21 @@ class SAML(object):
         })
 
         return b64_assertion
+
+def load_signer(private_key):
+    from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives import serialization
+    
+    with open(private_key, 'rb') as fh:
+        return serialization.load_pem_private_key(fh.read(), password = None, backend = default_backend())
+
+def sign(key, signed_info):
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.asymmetric import padding
+    
+    signer = key.signer(
+        padding.PKCS1v15(),
+        hashes.SHA1(),
+    )
+    signer.update(signed_info)
+    return signer.finalize()

@@ -33,7 +33,7 @@ setup(
   ],
   install_requires = [
     'lxml',
-    'M2Crypto',
+    'cryptography',
     'requests',
     'requests-oauthlib'
   ],
