@@ -156,7 +156,6 @@ class TestClient(object):
 
         assert int(r.content.institution_id) == self.institution_id
         assert r.content.home_url == 'http://www.intuit.com'
-        assert r.content.email_address == 'CustomerCentralBank@intuit.com'
 
     def test_url_building(self):
         """Client Test: URL building"""
