@@ -32,6 +32,7 @@ setup(
     'aggcat'
   ],
   install_requires = [
+    'six',
     'lxml',
     'cryptography',
     'requests',

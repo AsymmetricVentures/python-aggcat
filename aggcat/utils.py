@@ -1,4 +1,4 @@
-from StringIO import StringIO
+from six import StringIO
 from lxml import etree
 
 

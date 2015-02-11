@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-import urlparse
+from six.moves.urllib import parse as urlparse
 
 import requests
 from requests_oauthlib import OAuth1Session
