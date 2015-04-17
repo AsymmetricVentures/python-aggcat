@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import os
 import sys
-import ConfigParser
+from six.moves import configparser
 from datetime import datetime
 
 from ..client import AggcatClient
@@ -24,7 +24,7 @@ class TestClient(object):
         if not os.path.isfile(self.config_file):
             sys.exit('Please create an aggcat configuration file in ~/.aggcat_config to run tests.')
 
-        client_config = ConfigParser.ConfigParser()
+        client_config = configparser.ConfigParser()
         client_config.readfp(open(self.config_file))
 
         self.client_args = (
