@@ -172,7 +172,7 @@ class AggcatClient(object):
                 return AggCatResponse(
                     response.status_code,
                     response.headers,
-                    return_obj(response.content).get_object(),
+                    return_obj(response.content.decode()).get_object(),
                     response = response
                 )
             except return_obj.error_type:
@@ -193,7 +193,7 @@ class AggcatClient(object):
         xml_credentials = []
 
         # loop through the required credentials and generate xml credential keys and values
-        for name, value in credentials.iteritems():
+        for name, value in credentials.items():
             xml_credentials.append('<credential><name>%s</name><value>%s</value></credential>' % (
                 name,
                 value

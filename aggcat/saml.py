@@ -92,7 +92,7 @@ class SAML(object):
             'iso_not_after': '%sZ' % (self.now + timedelta(minutes=10)).isoformat(),
             'signature': '',
         }
-        return base64.b64encode(sha1(assertion).digest()).strip()
+        return base64.b64encode(sha1(assertion.encode()).digest()).strip().decode()
 
     def _signed_signature_value(self, signed_digest_value):
         """Get the signature value for the SAML signature"""
@@ -100,7 +100,7 @@ class SAML(object):
             'assertion_id': self.assertion_id,
             'signed_digest_value': signed_digest_value,
         }
-        return base64.b64encode(sign(self.rsa, signed_info))
+        return base64.b64encode(sign(self.rsa, signed_info.encode())).decode()
 
     def refresh(self):
         """Refresh the values to generate another assertion"""
@@ -121,7 +121,7 @@ class SAML(object):
         }
 
         # return the complete saml assertion
-        b64_assertion = base64.b64encode(SAML_ASSERTION % {
+        b64_assertion = base64.b64encode((SAML_ASSERTION % {
             'assertion_id': self.assertion_id,
             'iso_now': self.iso_now,
             'saml_identity_provider_id': self.saml_identity_provider_id,
@@ -129,9 +129,9 @@ class SAML(object):
             'iso_not_before': '%sZ' % (self.now - timedelta(minutes=5)).isoformat(),
             'iso_not_after': '%sZ' % (self.now + timedelta(minutes=10)).isoformat(),
             'signature': signature,
-        })
+        }).encode())
 
-        return b64_assertion
+        return b64_assertion.decode()
 
 def load_signer(private_key):
     from cryptography.hazmat.backends import default_backend
